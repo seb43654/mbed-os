@@ -156,7 +156,7 @@ const uint8_t APBPrescTable[8]  = {0, 0, 0, 0, 1, 2, 3, 4};
 /** @addtogroup STM32F4xx_System_Private_Functions
   * @{
   */
-
+void (*SysMemBootJump)(void);
 /**
   * @brief  Setup the microcontroller system
   *         Initialize the FPU setting, vector table location and External memory 
@@ -166,6 +166,13 @@ const uint8_t APBPrescTable[8]  = {0, 0, 0, 0, 1, 2, 3, 4};
   */
 __weak void SystemInit(void)
 {
+  if ( *((unsigned long *)0x20003FF0) == 0xDEADBEEF ) {
+       *((unsigned long *)0x20003FF0) =  0xCAFEFEED; // Reset our trigger
+      __set_MSP(0x20002250);
+      SysMemBootJump = (void (*)(void)) (*((uint32_t *) 0x1FFF0004U)); // Point to the bootloader mem address
+      SysMemBootJump();
+      while (1);
+  }
 #include "nvic_addr.h"                   // MBED
   SCB->VTOR = NVIC_FLASH_VECTOR_ADDRESS; // MBED
 
